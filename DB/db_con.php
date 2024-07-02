@@ -1,7 +1,7 @@
 <?php
 $driver = "mysql";
 $host = "localhost";
-$dbname = "minimart_db";
+$dbname = "minimart";
 $charset = "utf8mb4";
 $username = "root";
 $password = '';

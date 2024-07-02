@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require 'DB/db_con.php';
@@ -13,9 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
      
         $stmt = $pdo->prepare("SELECT address_id, role FROM users WHERE user_id = ?");
         $stmt->execute([$userId]);
-        // $address = $stmt->fetch(PDO::FETCH_ASSOC);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-        // if (!$address) {
+
         if (!$userData) {
             header("Location: add-address.php");
             exit();
@@ -36,34 +34,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           
             $totalPrice = 0;
             foreach ($selectedItems as $index => $itemId) {
-               // $stmt = $pdo->prepare("SELECT discounted_price, retail_price, stock FROM products WHERE product_id = ?");
-               $stmt = $pdo->prepare("SELECT product_variations.discounted_price, product_variations.retail_price, products.stock FROM products
+                $stmt = $pdo->prepare("SELECT product_variations.discounted_price, product_variations.retail_price, products.stock FROM products
                                         INNER JOIN product_variations ON products.product_id = product_variations.product_id 
                                         WHERE products.product_id = ?");
                 $stmt->execute([$itemId]);
                 $product = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($product) {
-                     // price based on role
-                     $price = ($userRole === 'Retail_Customer') ? $product['retail_price'] : $product['discounted_price'];
-
-                    // Fetch the quantity of the item
+                    $price = ($userRole === 'Retail_Customer') ? $product['retail_price'] : $product['discounted_price'];
                     $quantity = $selectedQuantities[$index];
-                    
-                    // Calculate the subtotal 
                     $subtotal = $price * $quantity;
-                    
                     $totalPrice += $subtotal;
             
                     $stmt = $pdo->prepare("INSERT INTO orders_details (quantity, price, order_id, product_id) VALUES (?, ?, ?, ?)");
                     $stmt->execute([$quantity, $price, $orderId, $itemId]);
                     
-                    // Update stock
                     $newStock = $product['stock'] - $quantity;
                     $stmt = $pdo->prepare("UPDATE products SET stock = ? WHERE product_id = ?");
                     $stmt->execute([$newStock, $itemId]);
                     
-                    // Remove item from the cart
                     $stmt = $pdo->prepare("DELETE FROM cart WHERE product_id = ? AND user_id = ?");
                     $stmt->execute([$itemId, $userId]);
                 } else {
@@ -71,10 +60,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
            
-            // Calculate delivery fee
+            // Calculate delivery fee based on minimum spend
             $deliveryFee = 0;
-            if ($deliveryOption === 'delivery' && $totalPrice < 2000){
-                $deliveryFee = 50.00;
+            if ($deliveryOption === 'delivery') {
+                $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key = 'min_order_for_free_shipping' OR setting_key = 'shipping_fee'");
+                $stmt->execute();
+                $optionData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($optionData as $option) {
+                    if ($option['setting_key'] === 'min_order_for_free_shipping' && $totalPrice < $option['setting_value']) {
+                        $deliveryFee = isset($optionData['shipping_fee']) ? floatval($option['setting_value']) : 0;
+                    }
+                }
             }
             $totalPrice += $deliveryFee;
             

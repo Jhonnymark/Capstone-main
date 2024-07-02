@@ -109,8 +109,19 @@ try {
         font-size: 48px;
         color: black;
         margin-left: 60px;
+        
     }
-    
+    .btn-toggle-role {
+    text-decoration: none;
+    color: #000; /* or any color that matches your design */
+    font-size: 1.5em; /* adjust the size of the icon */
+    padding: 5px;
+    margin: 5px;
+}
+
+.btn-toggle-role:hover {
+    color: #007bff; /* color on hover */
+}
 </style>
 </head>
 <body>
@@ -175,12 +186,19 @@ try {
                 <td><?php echo $customer['barangay']; ?></td>
                 <td><?php echo $customer['role']; ?></td>
                 <td>
-                    <a href="http://localhost/E-commerce/admin/view_user_order.php?user_id=<?php echo $customer['user_id']; ?>" class="edit-button" style="margin-right: 10px;"> 
-                        <i class="fa-solid fa-eye"></i>
-                    </a>
-                    <a href="http://localhost/E-commerce/admin/upgrade_user.php?user_id=<?php echo $customer['user_id']; ?>" class="edit-button">
-                        <i class="fas fa-arrow-alt-circle-up"></i>
-                    </a>
+    <a href="http://localhost/E-commerce/admin/view_user_order.php?user_id=<?php echo $customer['user_id']; ?>" class="edit-button" style="margin-right: 10px;"> 
+        <i class="fa-solid fa-eye"></i>
+    </a>
+    <?php if ($customer['role'] == 'Retail_Customer') : ?>
+        <a href="javascript:void(0);" class="btn-toggle-role" onclick="confirmRoleChange(event, '<?php echo $customer['user_id']; ?>', 'upgrade')">
+            <i class="fa fa-arrow-up" title="Upgrade to Wholesale"></i>
+        </a>
+    <?php else : ?>
+        <a href="javascript:void(0);" class="btn-toggle-role" onclick="confirmRoleChange(event, '<?php echo $customer['user_id']; ?>', 'downgrade')">
+            <i class="fa fa-arrow-down" title="Revert to Retail"></i>
+        </a>
+    <?php endif; ?>
+
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -216,6 +234,25 @@ try {
     //         MenuItems.style.maxHeight = "0px";
     //     }
     // }
+    
 </script>
+<script>
+    function confirmRoleChange(event, userId, action) {
+        event.preventDefault();
+        let message = action === 'upgrade' ? 
+            'Are you sure you want to upgrade this user to Wholesale?' :
+            'Are you sure you want to downgrade this user to Retail?';
+        
+        if (confirm(message)) {
+            window.location.href = 'upgrade_user.php?user_id=' + userId + '&action=' + action;
+        }
+    }
+
+    var menuItems = document.getElementById("menuItems");
+    function menutoggle() {
+        menuItems.classList.toggle("show");
+    }
+</script>
+
 </html>
 </body>

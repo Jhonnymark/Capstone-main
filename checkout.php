@@ -1,5 +1,4 @@
 <?php
-// session_start();
 require 'DB/db_con.php';
 require 'count-cart.php';
 
@@ -10,16 +9,16 @@ function getBestPromo($pdo, $total) {
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':currentDate', $currentDate, PDO::PARAM_STR);
     $stmt->execute();
-    $promos = $stmt -> fetchAll(PDO::FETCH_ASSOC);
+    $promos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     $bestPromo = null;
     $maxDiscount = 0;
 
-    foreach($promos as $promo){
-        if ($total >= $promo['minimum_spend']){
-            $discount = $total * ($promo ['discount_percentage'] / 100);
-            if ($discount > $maxDiscount){
-                $maxDiscount= $discount;
+    foreach ($promos as $promo) {
+        if ($total >= $promo['minimum_spend']) {
+            $discount = $total * ($promo['discount_percentage'] / 100);
+            if ($discount > $maxDiscount) {
+                $maxDiscount = $discount;
                 $bestPromo = $promo;
             }
         }
@@ -27,22 +26,26 @@ function getBestPromo($pdo, $total) {
     return $bestPromo;
 }
 
-if (!isset($_SESSION['role'])){
+if (!isset($_SESSION['role'])) {
     header("Location: login_form.php");
     exit();
 }
 
-if(isset($_POST['selectedItems'])) {
+if (isset($_POST['selectedItems'])) {
     $selectedItems = $_POST['selectedItems'];
 
     $selectedProducts = array();
     $total = 0;
 
+    // Fetch delivery settings from the database
+    $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('min_order_for_free_shipping', 'shipping_fee')");
+    $stmt->execute();
+    $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $minimumSpend = $settings['min_order_for_free_shipping'];
+    $deliveryFee = $settings['shipping_fee'];
+
     foreach ($selectedItems as $itemId) {
-        // $stmt = $pdo->prepare("SELECT cart.*, products.prod_name, products.discounted_price, products.retail_price, products.photo 
-        //                         FROM cart 
-        //                         INNER JOIN products ON cart.product_id = products.product_id 
-        //                         WHERE cart.cart_id = :cart_id");
         $stmt = $pdo->prepare("SELECT cart.*, products.prod_name, product_variations.discounted_price, 
                                         product_variations.retail_price, products.photo 
                                 FROM cart 
@@ -53,7 +56,6 @@ if(isset($_POST['selectedItems'])) {
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($product) {
-            // $price = ($product['quantity'] <= 2) ? $product['retail_price'] : $product['discounted_price'];
             $price = ($_SESSION['role'] === 'Retail_Customer') ? $product['retail_price'] : $product['discounted_price'];
             $subtotal = $price * $product['quantity'];
             $total += $subtotal;
@@ -64,18 +66,20 @@ if(isset($_POST['selectedItems'])) {
         }
     }
     
-    $bestPromo = getBestPromo ($pdo, $total);
-    $promoDiscount= 0;
-    if ($bestPromo){
-        $promoDiscount =$total * ($bestPromo[ 'discount_percentage'] / 100);
+    $bestPromo = getBestPromo($pdo, $total);
+    $promoDiscount = 0;
+    if ($bestPromo) {
+        $promoDiscount = $total * ($bestPromo['discount_percentage'] / 100);
         $total -= $promoDiscount;
     }
-    $deliveryFee = 0;
-    if (isset($_POST['pickupDelivery']) && $_POST['pickupDelivery'] === 'delivery' && $total < 2000) {
-        $deliveryFee = 50.00;
-    }
 
-    $total += $deliveryFee;
+    // Set initial values for JavaScript calculations
+    $initialTotal = $total;
+    $initialDeliveryFee = ($total < $minimumSpend) ? $deliveryFee : 0;
+
+    if (isset($_POST['pickupDelivery']) && $_POST['pickupDelivery'] === 'delivery' && $total < $minimumSpend) {
+        $total += $deliveryFee;
+    }
 
 } else {
     header("Location: cart-view.php");
@@ -104,9 +108,7 @@ table {
 }
 th, td {
     padding: 10px;
-    /* border-bottom: 2px solid #656262;
-    border-top: 2px solid #656262; */
-    text-align: Center;
+    text-align: center;
     background-color: #cfcfcf;
 }
 button {
@@ -164,7 +166,6 @@ input[type="radio"]:checked {
     <div class="setting-sec">
         <a href="http://localhost/E-commerce/Account.php">
             <i class="fa-solid fa-user"></i>
-            <!-- <img src="images/profile-icon.png" width="30px" height="30px" class="icon"> -->
         </a>
         <div class="cart-sec">
             <a href="http://localhost/E-commerce/cart-view.php">
@@ -192,7 +193,6 @@ input[type="radio"]:checked {
             <tr>
                 <td><img src="images/upload/<?php echo $product['photo']; ?>" alt="Product Photo" style="max-width: 50px; max-height: 50px;"></td>
                 <td><?php echo isset($product['prod_name']) ? $product['prod_name'] : ''; ?></td>
-                <!-- <td><?php echo isset($product['prod_price']) ? $product['prod_price'] : ''; ?></td> -->
                 <td><?php echo isset($product['price']) ? $product['price'] : ''; ?></td>
                 <td><?php echo isset($product['quantity']) ? $product['quantity'] : ''; ?></td>
                 <td class="subtotal"><?php echo isset($product['subtotal']) ? number_format($product['subtotal'], 2) : ''; ?></td>
@@ -208,10 +208,6 @@ input[type="radio"]:checked {
                     <label for="delivery">Delivery</label>
                 </td>
             </tr>
-            <!-- <tr>
-                <td colspan="4" style="text-align: right;"><strong>Delivery Fee:</strong></td>
-                <td><?php echo number_format($deliveryFee, 2); ?></td>
-            </tr> -->
             <tr id="deliveryFeeRow" style="display: none;">
                 <td colspan="4" style="text-align: right;"><strong>Delivery Fee:</strong></td>
                 <td id="deliveryFee"><?php echo number_format($deliveryFee, 2); ?></td>
@@ -219,6 +215,9 @@ input[type="radio"]:checked {
             <tr id="promoDiscountRow" style="display: <?php echo ($promoDiscount > 0) ? 'table-row' : 'none'; ?>;">
                 <td colspan="4" style="text-align: right;"><strong>Promo Discount:</strong></td>
                 <td id="promoDiscount"><?php echo number_format($promoDiscount, 2); ?></td>
+            </tr>
+            <tr id="minimumSpendMessageRow" style="display: none;">
+                <td colspan="5" style="text-align: center;"><strong>You qualify for free delivery because your total exceeds the minimum spend of <?php echo number_format($minimumSpend, 2); ?>!</strong></td>
             </tr>
             <tr>
                 <td colspan="4" style="text-align: right;"><strong>Total:</strong></td>
@@ -231,7 +230,7 @@ input[type="radio"]:checked {
         <?php foreach ($selectedProducts as $product): ?>
             <input type="hidden" name="selectedItems[]" value="<?php echo $product['product_id']; ?>">
             <input type="hidden" name="selectedQuantities[]" value="<?php echo $product['quantity']; ?>">
-            <input type="hidden" name="selectedPrices[]" value="<?php echo isset($price) ? $price : ''; ?>">
+            <input type="hidden" name="selectedPrices[]" value="<?php echo isset($product['price']) ? $product['price'] : ''; ?>">
         <?php endforeach; ?>
     </form>
     
@@ -255,33 +254,37 @@ input[type="radio"]:checked {
 
     var deliveryOption = document.querySelectorAll('input[name="pickupDelivery"]');
     var deliveryFeeRow = document.getElementById('deliveryFeeRow');
+    var minimumSpendMessageRow = document.getElementById('minimumSpendMessageRow');
 
-    // deliveryOption.forEach(function(option) {
-    //     option.addEventListener('change', function() {
-    //         if (option.value === 'delivery') {
-    //             deliveryFeeRow.style.display = 'table-row'; 
-    //         } else {
-    //             deliveryFeeRow.style.display = 'none'; 
-    //         }
-    //     });
-    // });
+    var initialTotal = <?php echo $initialTotal; ?>;
+    var initialDeliveryFee = <?php echo $initialDeliveryFee; ?>;
+    var isDeliverySelected = false;
 
     deliveryOption.forEach(function(option) {
-    option.addEventListener('change', function() {
-        let deliveryFee = 0;
-        let originalTotal = parseFloat(document.getElementById('total').textContent.replace(/,/g, ''));
-        
-        if (option.value === 'delivery' && originalTotal < 2000) {
-            deliveryFee = 50.00;
-            deliveryFeeRow.style.display = 'table-row'; 
-        } else {
-            deliveryFeeRow.style.display = 'table-row'; 
-        }
+        option.addEventListener('change', function() {
+            let total = initialTotal;
+            let deliveryFee = initialDeliveryFee;
+            
+            if (option.value === 'delivery' && !isDeliverySelected) {
+                if (total < <?php echo $minimumSpend; ?>) {
+                    deliveryFeeRow.style.display = 'table-row';
+                    total += deliveryFee;
+                    isDeliverySelected = true;
+                }
+            } else if (option.value === 'pickup') {
+                deliveryFeeRow.style.display = 'none';
+                total = initialTotal;
+                isDeliverySelected = false;
+                if (total >= <?php echo $minimumSpend; ?>) {
+                    minimumSpendMessageRow.style.display = 'table-row';
+                } else {
+                    minimumSpendMessageRow.style.display = 'none';
+                }
+            }
 
-        document.getElementById('deliveryFee').textContent = deliveryFee.toFixed(2);
-        document.getElementById('total').textContent = (originalTotal + deliveryFee).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            document.getElementById('total').textContent = total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        });
     });
-});
 </script>
 
 </body>

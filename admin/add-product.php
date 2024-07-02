@@ -34,7 +34,7 @@
         margin-top: 10px;
         font-weight: bold;
     }
-    label,input, textarea, select {
+    label, input, textarea, select {
         padding: 8px;
         width: 300px;
         height: 50px;
@@ -65,8 +65,6 @@
         min-height: 100px;
         max-height: 200px;
     }
-</style>
-
 </style>
 </head>
 <body>
@@ -101,53 +99,50 @@
     </div>
 </div>
     <h2>Add Product</h2>
-    <form method="post" action="http://localhost/E-commerce/admin/product-add.php" enctype="multipart/form-data">
-    <div class="form-group">
-        <label for="prod_name">Product Name:</label>
-        <input type="text" id="prod_name" name="prod_name"  required placeholder="Enter Product Name" style="text-transform: capitalize;"><br>
-        <!-- pattern="[A-Za-z][A-Za-z0-9\s]*" -->
-    </div>
-    <div class="form-group">
-        <label for="type_code">Type Code:</label>
-        <input type="text" id="type_code" name="type_code" required placeholder="Enter Product Type Code"><br>
-    </div>
-    <div class="form-group">
-        <label for="prod_desc">Product Description:</label>
-        <textarea id="prod_desc" name="prod_desc" required style="text-transform: capitalize;"></textarea>
-    </div>
-    <!-- variation -->
-    <div class="form-group">
-        <label for="variation_type">Variation Type:</label>
-        <input type="text" id="variation_type" name="variation_type[]" required placeholder="Enter Variation Type (e.g., per pcs, per case)">
-    </div>
-    <div class="form-group">
-        <label for="discounted_price">Discounted Price:</label>
-        <input type="number" id="discounted_price" name="discounted_price[]" step="0.01" required placeholder="Enter Discounted Price">
-    </div>
-    <div class="form-group">
-        <label for="retail_price">Retail Price:</label>
-        <input type="number" id="retail_price" name="retail_price[]" step="0.01" required placeholder="Enter Retail Price">
-    </div>
-    <!-- end -->
-    <div class="form-group">
-        <label for="stock">Stock:</label>
-        <input type="number" id="stock" name="stock" required placeholder="Enter Product Stock"><br>  
-    </div>
-    <div class="form-group">
-        <label for="category">Product Category:</label>
-        <select id="category" name="category" required>
-        <option value="" selected>- Select -</option>
-            <?php
-            include '../DB/db_con.php';
+    <form method="post" action="http://localhost/E-commerce/admin/product-add.php" enctype="multipart/form-data" onsubmit="return validateForm()">
+        <div class="form-group">
+            <label for="prod_name">Product Name:</label>
+            <input type="text" id="prod_name" name="prod_name"  required placeholder="Enter Product Name" style="text-transform: capitalize;"><br>
+        </div>
+        <div class="form-group">
+            <label for="type_code">Type Code:</label>
+            <input type="text" id="type_code" name="type_code" required placeholder="Enter Product Type Code"><br>
+        </div>
+        <div class="form-group">
+            <label for="prod_desc">Product Description:</label>
+            <textarea id="prod_desc" name="prod_desc" required style="text-transform: capitalize;"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="variation_type">Variation Type:</label>
+            <input type="text" id="variation_type" name="variation_type[]" required placeholder="Enter Variation Type (e.g., per pcs, per case)">
+        </div>
+        <div class="form-group">
+            <label for="discounted_price">Discounted Price:</label>
+            <input type="number" id="discounted_price" name="discounted_price[]" step="0.01" required placeholder="Enter Discounted Price">
+        </div>
+        <div class="form-group">
+            <label for="retail_price">Retail Price:</label>
+            <input type="number" id="retail_price" name="retail_price[]" step="0.01" required placeholder="Enter Retail Price">
+        </div>
+        <div class="form-group">
+            <label for="stock">Stock:</label>
+            <input type="number" id="stock" name="stock" required placeholder="Enter Product Stock"><br>  
+        </div>
+        <div class="form-group">
+            <label for="category">Product Category:</label>
+            <select id="category" name="category" required>
+                <option value="" selected>- Select -</option>
+                <?php
+                include '../DB/db_con.php';
 
-            $query = "SELECT category_id, category_name FROM category";
-            $result = $pdo->query($query);
+                $query = "SELECT category_id, category_name FROM category";
+                $result = $pdo->query($query);
 
-            while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-                echo '<option value="' . $row['category_id'] . '">' . $row['category_name'] . '</option>';
-            }
-            ?>
-        </select>
+                while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+                    echo '<option value="' . $row['category_id'] . '">' . $row['category_name'] . '</option>';
+                }
+                ?>
+            </select>
         </div>
         <div class="form-group">
             <label for="expiration_date">Expiration Date:</label>
@@ -155,42 +150,49 @@
         </div>
         <div class="form-group">
             <label for="photo" class="col-sm-1 control-label">Photo</label>
-        <div class="col-sm-5">
-            <input type="file" id="photo" name="photo">
+            <div class="col-sm-5">
+                <input type="file" id="photo" name="photo">
+            </div>
         </div>
-        </div>
-        <button type="submit"><i class="fa fa-save"></i>ADD</button>
+        <button type="submit"><i class="fa fa-save"></i> ADD</button>
     </form>
-<!--footer-->
-<footer>
-    <div class="container">
-        <div class="row">
-            <div class="footer-col-1">
-            <img src="../images/logo2.png" width="100px" height="60px">
-            </div>
-            <div class="footer-col-2">
-            <p>&copy; <?php echo date('Y'); ?> 4M Minimart Online Store. All rights reserved.</p>
+    <!--footer-->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="footer-col-1">
+                    <img src="../images/logo2.png" width="100px" height="60px">
+                </div>
+                <div class="footer-col-2">
+                    <p>&copy; <?php echo date('Y'); ?> 4M Minimart Online Store. All rights reserved.</p>
+                </div>
             </div>
         </div>
-    </div>
-</footer>
-<!-- js for toggle menu -->
-<script>
-   
-   var menuItems = document.getElementById("menuItems");
+    </footer>
+    <!-- js for toggle menu -->
+    <script>
+        function validateForm() {
+            let discountedPrices = document.querySelectorAll('input[name="discounted_price[]"]');
+            let retailPrices = document.querySelectorAll('input[name="retail_price[]"]');
+            
+            for (let i = 0; i < discountedPrices.length; i++) {
+                let discountedPrice = parseFloat(discountedPrices[i].value);
+                let retailPrice = parseFloat(retailPrices[i].value);
+
+                if (discountedPrice > retailPrice) {
+                    alert('Discounted price should not be higher than the retail price.');
+                    return false; // Prevent form submission
+                }
+            }
+
+            return true; // Allow form submission
+        }
+
+        var menuItems = document.getElementById("menuItems");
         function menutoggle() {
             menuItems.classList.toggle("show");
         }
-    // MenuItems.style.maxHeight = "0px";
-    // function menutoggle() {
-    //     if (MenuItems.style.maxHeight =="0px")
-    //     {
-    //         MenuItems.style.maxHeight = "300px";
-    //     }
-    //     else{
-    //         MenuItems.style.maxHeight = "0px";
-    //     }
-    // }
-</script>
-</html>
+    </script>
 </body>
+</html>
+

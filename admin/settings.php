@@ -3,55 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports</title>
+    <title>Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display+swap" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://kit.fontawesome.com/a1e3091ba9.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="../scss/style.scss">
     <style>
-        .btn {
-            margin-top: 10px;
-            margin-left: 8.5rem;
+        .settings-container {
+            margin: 20px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgb(2 2 2);
+            border-radius: 5px;
+        }
+        .settings-container h2 {
+            margin-bottom: 20px;
+        }
+        .settings-container label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .settings-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .settings-container button {
             display: inline-block;
             background-color: #cf9292;
             color: white;
-            padding: 10px 10px;
-            text-align: center;
-            text-decoration: none;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        .btn:hover {
+        .settings-container button:hover {
             background-color: #2ecc71;
-        }
-        nav#menuItems ul li a:hover {
-            color: red;
-        }
-        nav#menuItems ul li a.active {
-            color: red;
-        }
-        form {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        form label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-        form select {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
         }
     </style>
 </head>
@@ -82,46 +71,25 @@
         </div>
     </div>
 
-    <!-- Sales Report Form -->
-    <form action="generate_sales_report.php" method="post" target="_blank">
-        <label for="month">Month:</label>
-        <select name="month" id="month">
-            <?php
-                for ($m = 1; $m <= 12; $m++) {
-                    $month = date('F', mktime(0, 0, 0, $m, 1, date('Y')));
-                    echo "<option value='$m'>$month</option>";
-                }
-            ?>
-        </select>
+    <!-- Add the settings form -->
+    <div class="settings-container">
+        <h2>Shipping Settings</h2>
+        <form action="update_settings.php" method="post">
+            <label for="shipping_fee">Shipping Fee ($):</label>
+            <input type="number" step="0.01" id="shipping_fee" name="shipping_fee" value="<?php echo htmlspecialchars($shippingFee); ?>">
 
-        <label for="year">Year:</label>
-        <select name="year" id="year">
-            <?php
-                $currentYear = date('Y');
-                for ($y = $currentYear; $y >= 2000; $y--) {
-                    echo "<option value='$y'>$y</option>";
-                }
-            ?>
-        </select>
-        <button type="submit" class="btn">
-            <i class="fas fa-file-pdf"></i> Generate Sales Report
-        </button>
-    </form>
+            <label for="min_order_for_free_shipping">Minimum Order Amount for Free Shipping ($):</label>
+            <input type="number" step="0.01" id="min_order_for_free_shipping" name="min_order_for_free_shipping" value="<?php echo htmlspecialchars($minOrderForFreeShipping); ?>">
 
-    <!-- Inventory Report Form -->
-    <form action="generate_inventory_report.php" method="post" target="_blank">
-        <label for="stock_status">Stock Status:</label>
-        <select name="stock_status" id="stock_status">
-            <option value="all">All</option>
-            <option value="in_stock">In Stock</option>
-            <option value="out_of_stock">Out of Stock</option>
-        </select>
-        <button type="submit" class="btn">
-            <i class="fas fa-file-pdf"></i> Generate Inventory Report
-        </button>
-    </form>
+            <button type="submit">Update Settings</button>
+        </form>
+    </div>
 
-    <!-- Footer -->
+    <!-- Existing code for dashboard -->
+    <div class="smallbox-con">
+        <!-- Your existing dashboard code -->
+    </div>
+
     <footer>
         <div class="container">
             <div class="row">
@@ -135,7 +103,6 @@
         </div>
     </footer>
 
-    <!-- JS for toggle menu -->
     <script>
         var menuItems = document.getElementById("menuItems");
         function menutoggle() {
